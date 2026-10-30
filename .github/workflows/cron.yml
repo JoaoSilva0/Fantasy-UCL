@@ -1,28 +1,51 @@
-# Alternativa ao Vercel Cron (plano Hobby): chama os jobs da app.
-# Secrets necessários: APP_URL (ex: https://midweek.vercel.app) e CRON_SECRET.
+# Jobs frequentes da app (a Vercel Hobby só permite crons diários: `daily` corre no Vercel Cron, ver vercel.json).
+# Secrets necessários (Settings → Secrets and variables → Actions):
+#   APP_URL     — URL pública da app, sem barra final (ex: https://midweek.vercel.app)
+#   CRON_SECRET — o mesmo valor definido na Vercel
+# Notas: horas em UTC; o GitHub só corre agendamentos da branch por omissão (main), no mínimo a cada 5 min,
+# e pode atrasar alguns minutos em horas de pico. Em repositórios públicos não gasta minutos pagos.
 name: cron
 on:
   schedule:
-    - cron: "*/5 * * * *"        # tick: auto-picks, trocas, waivers
-    - cron: "*/5 17-23 * * 2,3"  # ao vivo nas noites de UCL
-    - cron: "7 * * * *"          # pós-jogo + fecho de jornadas
-    - cron: "13 5 * * *"         # plantéis e lesões
+    - cron: "*/5 * * * *"           # tick: auto-picks em atraso, trocas, waivers
+    - cron: "*/5 17-23 * * 2,3,4"   # live: jogos a decorrer nas noites de UCL
+    - cron: "7 * * * *"             # post: correções pós-jogo + fecho de jornadas
   workflow_dispatch:
+    inputs:
+      job:
+        description: Job a executar
+        type: choice
+        options: [tick, live, post, daily]
+        default: tick
+
+permissions: {}
+
+concurrency:
+  group: cron-${{ github.event.schedule || inputs.job }}
+  cancel-in-progress: false
+
 jobs:
   call:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
-      - name: Jobs
+      - name: Chamar /api/cron
         env:
           APP_URL: ${{ secrets.APP_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           SCHEDULE: ${{ github.event.schedule }}
+          MANUAL_JOB: ${{ inputs.job }}
         run: |
-          call() { curl -fsS -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/$1"; echo; }
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "::error::Faltam os secrets APP_URL e/ou CRON_SECRET"; exit 1
+          fi
           case "$SCHEDULE" in
-            "*/5 * * * *") call tick ;;
-            "*/5 17-23 * * 2,3") call live ;;
-            "7 * * * *") call post ;;
-            "13 5 * * *") call daily ;;
-            *) call tick; call post ;;
+            "*/5 * * * *")         JOB=tick ;;
+            "*/5 17-23 * * 2,3,4") JOB=live ;;
+            "7 * * * *")           JOB=post ;;
+            *)                     JOB="${MANUAL_JOB:-tick}" ;;
           esac
+          echo "job: $JOB"
+          curl -fsS --retry 2 --retry-delay 10 --max-time 310 \
+            -H "Authorization: Bearer $CRON_SECRET" "${APP_URL%/}/api/cron/$JOB"
+          echo

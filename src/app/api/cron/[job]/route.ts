@@ -8,11 +8,11 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 /**
- * Jobs agendados. Proteção: Authorization: Bearer <CRON_SECRET> (o Vercel Cron envia este header).
- *  tick  — auto-picks em atraso, expiração/execução de trocas, processamento de waivers (cada minuto)
- *  live  — estatísticas dos jogos a decorrer (cada minuto em dias de jogo)
- *  post  — correções pós-jogo + fecho de jornadas (de hora a hora)
- *  daily — plantéis e lesões (diário)
+ * Jobs agendados. Proteção: Authorization: Bearer <CRON_SECRET> (o Vercel Cron e o workflow cron.yml enviam este header).
+ *  tick  — auto-picks em atraso, expiração/execução de trocas, processamento de waivers (GitHub Actions, cada 5 min)
+ *  live  — estatísticas dos jogos a decorrer (GitHub Actions, cada 5 min nas noites de jogo)
+ *  post  — correções pós-jogo + fecho de jornadas (GitHub Actions, de hora a hora)
+ *  daily — plantéis e lesões (Vercel Cron, diário)
  */
 export async function GET(req: Request, { params }: { params: Promise<{ job: string }> }) {
   const secret = process.env.CRON_SECRET;
