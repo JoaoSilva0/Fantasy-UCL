@@ -42,7 +42,11 @@ BASE_URL=http://localhost:3000 node tests/e2e/league-flow.mjs   # browser real, 
 2. `npx prisma migrate deploy` contra essa BD.
 3. **Se usar Supabase**: correr [`prisma/rls.sql`](prisma/rls.sql) — ativa RLS em todas as tabelas, bloqueando o acesso direto via chaves `anon`/`authenticated` (a app acede só pelo servidor).
 4. Importar o repositório na Vercel e definir as variáveis de `.env.example` (`API_FOOTBALL_KEY`, `CRON_SECRET`, …).
-5. Cron: `vercel.json` define os jobs (`tick` a cada minuto, `live` nas noites de jogo, `post` de hora a hora, `daily`). O plano Hobby da Vercel só permite crons diários — nesse caso usar o workflow [`.github/workflows/cron.yml`](.github/workflows/cron.yml) (secrets `APP_URL` e `CRON_SECRET`).
+5. Cron (compatível com a Vercel Hobby, que só permite crons diários):
+   - `vercel.json` → `daily` (plantéis e lesões), uma vez por dia.
+   - [`.github/workflows/cron.yml`](.github/workflows/cron.yml) → `tick` a cada 5 min, `live` a cada 5 min nas noites de UCL (ter/qua/qui, 17–23h UTC) e `post` de hora a hora. Requer os secrets `APP_URL` e `CRON_SECRET` no GitHub e só corre a partir da branch `main`.
+   - Durante o draft, o relógio continua em tempo real enquanto houver alguém na sala (o stream SSE aplica os auto-picks); o `tick` só apanha drafts sem ninguém ligado.
+   - Com Vercel Pro, pode voltar-se a pôr `tick`/`live` a cada minuto no `vercel.json` e desligar o workflow.
 
 ## Segurança
 - Sessões com token aleatório (só o hash SHA-256 é guardado), cookie `httpOnly`/`SameSite=Lax`/`Secure`, bcrypt (12 rounds).
