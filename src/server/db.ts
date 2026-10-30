@@ -9,7 +9,8 @@ import { Pool } from "pg";
  * attachDatabasePool fecha ligações inativas antes de a função ser suspensa.
  */
 function createClient() {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 10, idleTimeoutMillis: 5_000 });
+  // connectionTimeoutMillis: falha em vez de esperar para sempre se a BD não responder (cobre o arranque a frio da Neon).
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 10, idleTimeoutMillis: 5_000, connectionTimeoutMillis: 10_000 });
   attachDatabasePool(pool);
   return new PrismaClient({ adapter: new PrismaPg(pool) });
 }
