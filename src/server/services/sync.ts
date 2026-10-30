@@ -82,7 +82,7 @@ export async function upsertPlayers(seasonId: string, players: PlayerData[], dea
     const clubId = clubs.get(p.clubExternalId);
     if (!clubId || seen.has(p.externalId)) continue;
     seen.add(p.externalId);
-    const { clubExternalId: _c, externalId, ...rest } = p;
+    const { clubExternalId: _, externalId, ...rest } = p;
     await prisma.player.upsert({
       where: { seasonId_externalId: { seasonId, externalId } },
       create: { seasonId, externalId, clubId, ...rest },
@@ -214,11 +214,12 @@ export async function syncDaily() {
 
 // ───────────── modo DEMO (fictício) ─────────────
 
-export async function ensureDemoSeason() {
-  const existing = await prisma.season.findUnique({ where: { provider_externalId: { provider: "demo", externalId: DEMO_SEASON_ID } } });
-  if (existing) return existing;
+/**
+ * Cria uma época DEMO isolada (uma por liga): a simulação de jornadas numa liga nunca afeta outra.
+ */
+export async function createDemoSeason() {
   const season = await upsertSeason("demo", {
-    externalId: DEMO_SEASON_ID, name: "DEMO · Liga Fictícia 2026/27", year: 2026,
+    externalId: `${DEMO_SEASON_ID}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, name: "DEMO · Liga Fictícia 2026/27", year: 2026,
     clubs: demoClubs(), rounds: demoRounds(), fixtures: demoLeaguePhaseFixtures(),
   }, true);
   await upsertPlayers(season.id, demoPlayers(), false);

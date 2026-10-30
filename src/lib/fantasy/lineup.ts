@@ -73,7 +73,9 @@ export function bestLineup(roster: RosterPlayer[], value: (id: string) => number
     const score = starters.reduce((s, p) => s + value(p.id), 0);
     if (!best || score > best.score) {
       const ids = new Set(starters.map((p) => p.id));
-      const sorted = [...starters].sort((a, b) => value(b.id) - value(a.id));
+      // Capitão: mais valor; em empate (ex: sem dados), prefere avançados > médios > defesas > GR.
+      const rank = { FWD: 0, MID: 1, DEF: 2, GK: 3 };
+      const sorted = [...starters].sort((a, b) => value(b.id) - value(a.id) || rank[a.position] - rank[b.position]);
       const benchPlayers = roster.filter((p) => !ids.has(p.id));
       // Banco: GR suplente no fim; restantes por valor.
       benchPlayers.sort((a, b) =>

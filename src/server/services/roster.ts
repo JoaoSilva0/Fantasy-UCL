@@ -1,7 +1,7 @@
 import { prisma, type Tx } from "../db";
 import { UserError } from "../errors";
 import { POS_LABEL, rosterSize, type LeagueSettings, type Pos } from "@/lib/fantasy/config";
-import { parseSettings } from "./access";
+import { parseSettings } from "./settings";
 import { emit, audit } from "./activity";
 import { repairTeamLineups } from "./lineups";
 import { playerLockedNow } from "./rounds";

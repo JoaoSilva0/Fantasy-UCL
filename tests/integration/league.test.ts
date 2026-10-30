@@ -1,13 +1,13 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { prisma } from "@/server/db";
-import { ensureDemoSeason, simulateDemoRound } from "@/server/services/sync";
+import { createDemoSeason, simulateDemoRound } from "@/server/services/sync";
 import { createLeague, joinLeague, updateSettings } from "@/server/services/leagues";
 import { makePick, randomizeOrder, startDraft, tickDraft } from "@/server/services/draft";
 import { saveLineup, getOrCreateLineup } from "@/server/services/lineups";
 import { proposeTrade, respondTrade, voteTrade } from "@/server/services/trades";
 import { addFreeAgent, claimWaiver, dropPlayer, processWaivers } from "@/server/services/roster";
 import { standings } from "@/server/services/matchups";
-import { parseScoring, parseSettings } from "@/server/services/access";
+import { parseScoring, parseSettings } from "@/server/services/settings";
 import { seededShuffle, seedHash, teamForPick } from "@/lib/fantasy/snake";
 import { scorePlayer, type MatchStats } from "@/lib/fantasy/scoring";
 import type { Pos } from "@/lib/fantasy/config";
@@ -27,7 +27,7 @@ async function teams() {
 
 beforeAll(async () => {
   await reset();
-  seasonId = (await ensureDemoSeason()).id;
+  seasonId = (await createDemoSeason()).id;
   for (let i = 1; i <= 8; i++) {
     const u = await prisma.user.create({ data: { email: `u${i}@test.pt`, passwordHash: "x", displayName: `Amigo ${i}` } });
     users.push(u.id);
@@ -149,6 +149,13 @@ describe("simulação de uma liga com 8 participantes", () => {
       expect(s.points).toBeCloseTo(expected, 1);
       expect(s.final).toBe(true);
     }
+    // A jornada seguinte herda o onze (e o capitão) da anterior.
+    const r2 = await prisma.round.findFirstOrThrow({ where: { seasonId, order: 2 } });
+    const prev = await prisma.lineup.findUniqueOrThrow({ where: { teamId_roundId: { teamId: t.id, roundId: r1.id } } });
+    const next = await getOrCreateLineup(t.id, r2.id, leagueId);
+    expect(next?.captainId).toBe(prev.captainId);
+    expect(next?.starters).toEqual(prev.starters);
+
     const table = await standings(leagueId);
     expect(table).toHaveLength(8);
     expect(table[0].w + table[0].d + table[0].l).toBe(1);

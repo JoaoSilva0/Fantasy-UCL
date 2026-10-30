@@ -6,7 +6,7 @@ import {
 } from "@/lib/fantasy/config";
 import { createDraft } from "./draft";
 import { emit, audit } from "./activity";
-import { parseSettings } from "./access";
+import { parseSettings } from "./settings";
 import { recomputeLeague } from "./scoring";
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem caracteres ambíguos

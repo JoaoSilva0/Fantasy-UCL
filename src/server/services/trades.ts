@@ -2,7 +2,7 @@ import { prisma, type Tx } from "../db";
 import { UserError } from "../errors";
 import { analyzeTrade, type TradeAnalysis } from "@/lib/fantasy/trade-analyzer";
 import type { Pos } from "@/lib/fantasy/config";
-import { parseSettings } from "./access";
+import { parseSettings } from "./settings";
 import { emit, audit } from "./activity";
 import { playerForm } from "./form";
 import { repairTeamLineups } from "./lineups";

@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MIDWEEK — Fantasy Champions League privada
 
-## Getting Started
+Fantasy da UEFA Champions League para grupos privados de amigos: ligas por convite, **snake draft em tempo real**, plantéis com onze/capitão/formação, **trades entre participantes** com votação e anti-colusão, **free agents e waivers** rotativos, H2H com playoffs, pontuação avançada que valoriza defesas, e integração com estatísticas reais via API-Football.
 
-First, run the development server:
+> Projeto independente de fãs; não afiliado à UEFA. A marca "MIDWEEK" e o logótipo são originais.
+
+## Documentação
+- [`docs/01-PLANEAMENTO.md`](docs/01-PLANEAMENTO.md) — arquitetura, BD, regras, draft, riscos
+- [`docs/02-APIS.md`](docs/02-APIS.md) — comparação de APIs, decisão, métricas disponíveis, configuração
+- [`docs/03-PONTUACAO.md`](docs/03-PONTUACAO.md) — motor de pontuação, anti-duplicação, equilíbrio
+
+## Stack
+Next.js 15 (App Router, Server Actions) · React 19 · TypeScript · Tailwind v4 · componentes no padrão shadcn/ui (Radix + cva) · Framer Motion · PostgreSQL · Prisma 6 · SSE para tempo real · Vitest + Playwright.
+
+## Arranque local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env          # ajustar DATABASE_URL
+npm install
+npx prisma migrate deploy
+npm run build && npm start    # ou: npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrir http://localhost:3000, criar conta, **Criar liga**.
+- Sem `API_FOOTBALL_KEY`: escolhe **Época DEMO** — clubes, jogadores e estatísticas **fictícios**, sempre rotulados. Cada liga DEMO tem a sua época isolada; o comissário simula jornadas em *Admin → Dados & jornadas*.
+- Com `API_FOOTBALL_KEY`: botão **Importar época real** (ou `npm run sync -- season`) importa clubes da fase de liga, jornadas, jogos, plantéis e lesões.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Para os jobs automáticos em local: `npm run worker` (auto-picks, trocas, waivers, sync ao vivo/pós-jogo).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Testes
 
-## Learn More
+```bash
+npm test                    # unitários: motor de pontuação, snake, onze, trades, adaptador API-Football
+npm run test:integration    # PostgreSQL real: liga de 8, draft completo de 120 escolhas (com corrida
+                            # concorrente), jornada ao vivo→fechada com pontos validados, trades, veto, waivers
+BASE_URL=http://localhost:3000 node tests/e2e/league-flow.mjs   # browser real, 4 utilizadores em simultâneo
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy (Vercel + Supabase/Neon)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Criar uma base de dados PostgreSQL (Supabase, Neon…). Usar a connection string *pooled* em `DATABASE_URL`.
+2. `npx prisma migrate deploy` contra essa BD.
+3. **Se usar Supabase**: correr [`prisma/rls.sql`](prisma/rls.sql) — ativa RLS em todas as tabelas, bloqueando o acesso direto via chaves `anon`/`authenticated` (a app acede só pelo servidor).
+4. Importar o repositório na Vercel e definir as variáveis de `.env.example` (`API_FOOTBALL_KEY`, `CRON_SECRET`, …).
+5. Cron: `vercel.json` define os jobs (`tick` a cada minuto, `live` nas noites de jogo, `post` de hora a hora, `daily`). O plano Hobby da Vercel só permite crons diários — nesse caso usar o workflow [`.github/workflows/cron.yml`](.github/workflows/cron.yml) (secrets `APP_URL` e `CRON_SECRET`).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Segurança
+- Sessões com token aleatório (só o hash SHA-256 é guardado), cookie `httpOnly`/`SameSite=Lax`/`Secure`, bcrypt (12 rounds).
+- Todas as mutações são Server Actions com validação Zod e verificação de membro/comissário no servidor. Ligas privadas devolvem 404 a não-membros (páginas e stream SSE).
+- Constraints na BD: um jogador por liga (`RosterEntry @@unique([leagueId, playerId])`), uma equipa por utilizador por liga, escolhas únicas no draft. Escolhas serializadas com `SELECT … FOR UPDATE`.
+- Bloqueios de onze/trocas/libertações validados no servidor contra o início real dos jogos.
+- Auditoria append-only (`Transaction`) de draft, trocas, contratações, waivers, alterações de regras e recálculos; histórico de correções de estatísticas (`StatRevision`).
+- API keys apenas em variáveis de ambiente do servidor.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Limitações conhecidas
+- A API-Football não fornece cortes, recuperações, grandes oportunidades, erros, bolas no poste nem MVP oficial → essas métricas ficam "n/d" (ver docs). Upgrade: implementar um provider Sportmonks (`src/server/providers/types.ts`).
+- O plantel usa o plantel atual do clube (`players/squads`), não a lista oficial de inscrição UEFA (não disponível na API).
+- Notificações são in-app + tempo real; não há push/email.

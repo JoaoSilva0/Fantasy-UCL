@@ -2,7 +2,7 @@ import { prisma } from "../db";
 import { scorePlayer, hashObject, type MatchStats } from "@/lib/fantasy/scoring";
 import { computeTeamScore, type PlayerRoundResult } from "@/lib/fantasy/lineup";
 import type { Pos } from "@/lib/fantasy/config";
-import { parseScoring, parseSettings } from "./access";
+import { parseScoring, parseSettings } from "./settings";
 import { getOrCreateLineup } from "./lineups";
 import { roundLockState } from "./rounds";
 import { emit, audit } from "./activity";

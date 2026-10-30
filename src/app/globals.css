@@ -1,26 +1,90 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ───────────── Design tokens · MIDWEEK ─────────────
+   Noite europeia: navy profundo, azul elétrico como única cor de ação,
+   prata para hierarquia secundária. Cores semânticas apenas para estado. */
+@theme {
+  --color-ink: #030817;
+  --color-bg: #050b1f;
+  --color-surface: #0a1430;
+  --color-surface-2: #0e1b3e;
+  --color-surface-3: #14244f;
+  --color-line: rgb(148 170 230 / 0.11);
+  --color-line-strong: rgb(148 170 230 / 0.22);
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-fg: #eef2fb;
+  --color-silver: #c3cde3;
+  --color-muted: #8494b8;
+  --color-faint: #56648a;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --color-accent: #2f6bff;
+  --color-accent-strong: #5088ff;
+  --color-accent-soft: rgb(47 107 255 / 0.14);
+  --color-glow: #7fb0ff;
+
+  --color-win: #3ddc97;
+  --color-loss: #ff6b7a;
+  --color-warn: #ffc857;
+
+  --color-pos-gk: #f5b942;
+  --color-pos-def: #3ddc97;
+  --color-pos-mid: #5aa9ff;
+  --color-pos-fwd: #ff7a8a;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-card: 18px;
+  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 20px 40px -24px rgb(0 0 0 / 0.6);
+
+  --animate-pulse-ring: pulse-ring 1.6s ease-out infinite;
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgb(47 107 255 / 0.55); }
+    100% { box-shadow: 0 0 0 14px rgb(47 107 255 / 0); }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  html { color-scheme: dark; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgb(47 107 255 / 0.13), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgb(47 107 255 / 0.07), transparent 60%),
+      var(--color-bg);
+    background-attachment: fixed;
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  ::selection { background: rgb(47 107 255 / 0.4); }
+  :focus-visible { outline: 2px solid var(--color-accent-strong); outline-offset: 2px; border-radius: 6px; }
+  * { scrollbar-width: thin; scrollbar-color: var(--color-surface-3) transparent; }
+}
+
+@layer components {
+  .card {
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.025), transparent 40%), var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    font-weight: 600;
+  }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+  .pitch {
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.035) 1px, transparent 1px) 0 0 / 100% 12.5%,
+      radial-gradient(circle at 50% 0%, transparent 0 58px, rgb(195 205 227 / 0.13) 59px 60px, transparent 61px),
+      linear-gradient(180deg, #0b1d4a 0%, #0a1638 100%);
+    border: 1px solid var(--color-line-strong);
+  }
+  .demo-stripe {
+    background: repeating-linear-gradient(-45deg, rgb(255 200 87 / 0.12) 0 8px, transparent 8px 16px);
+  }
 }

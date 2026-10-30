@@ -3,7 +3,7 @@ import { prisma, type Tx } from "../db";
 import { UserError } from "../errors";
 import { newSeed, seedHash, seededShuffle, teamForPick } from "@/lib/fantasy/snake";
 import { POS_LABEL, rosterSize, type LeagueSettings, type Pos } from "@/lib/fantasy/config";
-import { parseSettings } from "./access";
+import { parseSettings } from "./settings";
 import { emit, audit } from "./activity";
 import { playerForm } from "./form";
 import { ensureSchedule } from "./matchups";

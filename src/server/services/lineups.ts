@@ -30,14 +30,17 @@ export async function getOrCreateLineup(teamId: string, roundId: string, leagueI
   if (!base) return null;
   try {
     return await db.lineup.create({ data: { teamId, roundId, ...base } });
-  } catch {
-    // Criado em paralelo por outro pedido.
+  } catch (e) {
+    // Criado em paralelo por outro pedido (violação de unicidade); qualquer outro erro propaga.
+    if ((e as { code?: string }).code !== "P2002") throw e;
     return db.lineup.findUnique({ where: { teamId_roundId: { teamId, roundId } } });
   }
 }
 
 /** Mantém as escolhas do utilizador sempre que possível e corrige o que deixou de ser válido. */
-function repair(l: LineupInput, roster: RosterPlayer[], value: (id: string) => number): LineupInput | null {
+function repair(src: LineupInput, roster: RosterPlayer[], value: (id: string) => number): LineupInput | null {
+  // Só os campos do onze (o registo de origem traz id/teamId/roundId que não podem ser copiados).
+  const l: LineupInput = { formation: src.formation, starters: src.starters, bench: src.bench, captainId: src.captainId, viceCaptainId: src.viceCaptainId };
   if (validateLineup(l, roster).length === 0) {
     const ids = new Set([...l.starters, ...l.bench]);
     const extra = roster.filter((p) => !ids.has(p.id)).map((p) => p.id);

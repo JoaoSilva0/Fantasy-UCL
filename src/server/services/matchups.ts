@@ -1,6 +1,6 @@
 import { prisma } from "../db";
 import { roundRobin, sortStandings, type StandingRow } from "@/lib/fantasy/schedule";
-import { parseSettings } from "./access";
+import { parseSettings } from "./settings";
 
 const REGULAR_WITH_PLAYOFFS = ["LEAGUE_PHASE", "PLAYOFF", "R16"];
 

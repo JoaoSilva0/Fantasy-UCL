@@ -6,7 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "test": "vitest run tests/unit",
+    "test:integration": "DATABASE_URL=${TEST_DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/uclfantasy_test} prisma migrate deploy && vitest run tests/integration",
+    "worker": "tsx --env-file=.env scripts/worker.ts",
+    "sync": "tsx --env-file=.env scripts/sync.ts",
+    "draft:finish": "tsx --env-file=.env scripts/finish-draft.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

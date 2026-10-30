@@ -1,0 +1,28 @@
+# Alternativa ao Vercel Cron (plano Hobby): chama os jobs da app.
+# Secrets necessários: APP_URL (ex: https://midweek.vercel.app) e CRON_SECRET.
+name: cron
+on:
+  schedule:
+    - cron: "*/5 * * * *"        # tick: auto-picks, trocas, waivers
+    - cron: "*/5 17-23 * * 2,3"  # ao vivo nas noites de UCL
+    - cron: "7 * * * *"          # pós-jogo + fecho de jornadas
+    - cron: "13 5 * * *"         # plantéis e lesões
+  workflow_dispatch:
+jobs:
+  call:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Jobs
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          call() { curl -fsS -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/$1"; echo; }
+          case "$SCHEDULE" in
+            "*/5 * * * *") call tick ;;
+            "*/5 17-23 * * 2,3") call live ;;
+            "7 * * * *") call post ;;
+            "13 5 * * *") call daily ;;
+            *) call tick; call post ;;
+          esac
