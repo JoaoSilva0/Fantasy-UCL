@@ -8,6 +8,9 @@ export default defineConfig({
     fileParallelism: false,
     testTimeout: 120000,
     hookTimeout: 120000,
-    env: { DATABASE_URL: process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/uclfantasy_test" },
+    env: {
+      DATABASE_URL: process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/uclfantasy_test",
+      DATABASE_URL_UNPOOLED: process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/uclfantasy_test",
+    },
   },
 });
